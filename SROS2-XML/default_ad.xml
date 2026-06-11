@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  default_ad_api.xml
+  ==================
+  Two enclaves for the AD API layer:
+
+  /autoware/ad_api
+    The default_ad_api node that SERVES the /api/* endpoints.
+    It bridges between external callers and internal Autoware services.
+    Lives inside the trust boundary — can read internal state topics
+    and call internal services on behalf of authorised callers.
+
+  /autoware/fms
+    An external caller enclave (FMS, HMI, custom operator node).
+    Can ONLY interact via /api/* topics and services.
+    Cannot touch any internal Autoware topic directly.
+
+  AD API endpoints covered:
+    Operation mode  → /api/operation_mode/*
+    Routing         → /api/routing/*
+    Doors           → /api/vehicle/doors/*
+    Fail-safe / MRM → /api/fail_safe/*
+    Localisation    → /api/localization/*
+
+  USAGE:
+    # Generate enclave artifacts alongside the main policy:
+    ros2 security generate_artifacts \
+      -k ~/autoware_keystore \
+      -p autoware_policy.xml \
+      -p default_ad_api.xml \
+      -p untrusted.xml
+
+    # Launch the AD API node with its enclave:
+    ros2 run default_ad_api default_ad_api_node \
+      --ros-args --enclave /autoware/ad_api
+
+    # Launch your FMS/HMI node with its enclave:
+    ros2 run your_pkg your_fms_node \
+      --ros-args --enclave /autoware/fms
+-->
+<policy version="0.2.0">
+  <enclaves>
+
+    <!-- ═══════════════════════════════════════════════════════
+         AD API BROKER  (default_ad_api node)
+         Serves /api/* to external callers, reads internal state.
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/ad_api">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+
+            <!-- Publishes the public /api/* status topics -->
+            <publish>
+              <topic>api/operation_mode/state</topic>
+              <topic>api/routing/route</topic>
+              <topic>api/routing/state</topic>
+              <topic>api/vehicle/doors/status</topic>
+              <topic>api/fail_safe/mrm_state</topic>
+              <topic>api/localization/initialization_state</topic>
+              <topic>api/motion/state</topic>
+            </publish>
+
+            <!-- Reads internal Autoware topics to populate /api/* -->
+            <subscribe>
+              <topic>system/operation_mode/state</topic>
+              <topic>system/fail_safe/mrm_state</topic>
+              <topic>system/emergency/hazard_status</topic>
+              <topic>system/mrm/comfortable_stop/status</topic>
+              <topic>system/mrm/emergency_stop/status</topic>
+              <topic>planning/mission_planning/route</topic>
+              <topic>planning/scenario_planning/trajectory</topic>
+              <topic>localization/kinematic_state</topic>
+              <topic>localization/pose_estimator/pose_with_covariance</topic>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>vehicle/status/control_mode</topic>
+              <topic>vehicle/status/door_status</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+
+          </topics>
+          <services>
+
+            <!-- Serves /api/* service calls to external callers -->
+            <reply>
+              <service>api/operation_mode/change_to_autonomous</service>
+              <service>api/operation_mode/change_to_stop</service>
+              <service>api/operation_mode/change_to_local</service>
+              <service>api/operation_mode/change_to_remote</service>
+              <service>api/operation_mode/enable_autoware_control</service>
+              <service>api/operation_mode/disable_autoware_control</service>
+              <service>api/routing/set_route_points</service>
+              <service>api/routing/set_route</service>
+              <service>api/routing/clear_route</service>
+              <service>api/vehicle/doors/command</service>
+              <service>api/fail_safe/mrm_state</service>
+              <service>api/localization/initialize</service>
+            </reply>
+
+            <!-- Calls internal services to action the requests -->
+            <request>
+              <service>system/operation_mode/change_operation_mode</service>
+              <service>planning/mission_planning/set_route</service>
+              <service>planning/mission_planning/set_route_points</service>
+              <service>planning/mission_planning/clear_route</service>
+              <service>vehicle/*/door_command</service>
+              <service>vehicle/*/control_mode_request</service>
+              <service>localization/*/initialize</service>
+            </request>
+
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         FMS / HMI EXTERNAL CALLER
+         Can only speak to Autoware via /api/* — zero access to
+         any internal topics or internal services directly.
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/fms">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+
+            <!-- Read public /api/* status topics only -->
+            <subscribe>
+              <topic>api/operation_mode/state</topic>
+              <topic>api/routing/route</topic>
+              <topic>api/routing/state</topic>
+              <topic>api/vehicle/doors/status</topic>
+              <topic>api/fail_safe/mrm_state</topic>
+              <topic>api/localization/initialization_state</topic>
+              <topic>api/motion/state</topic>
+            </subscribe>
+
+            <!-- No direct publish to any internal topic -->
+            <publish/>
+
+          </topics>
+          <services>
+
+            <!-- Call /api/* services only — no internal service access -->
+            <request>
+              <service>api/operation_mode/change_to_autonomous</service>
+              <service>api/operation_mode/change_to_stop</service>
+              <service>api/operation_mode/change_to_local</service>
+              <service>api/operation_mode/change_to_remote</service>
+              <service>api/operation_mode/enable_autoware_control</service>
+              <service>api/operation_mode/disable_autoware_control</service>
+              <service>api/routing/set_route_points</service>
+              <service>api/routing/set_route</service>
+              <service>api/routing/clear_route</service>
+              <service>api/vehicle/doors/command</service>
+              <service>api/localization/initialize</service>
+            </request>
+
+            <!-- No internal service calls allowed -->
+            <reply/>
+
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+  </enclaves>
+</policy>
