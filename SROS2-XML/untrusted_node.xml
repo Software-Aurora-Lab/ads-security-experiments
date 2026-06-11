@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  untrusted.xml
+  =============
+  Deny-all enclave for any node that should have zero access.
+
+  Use cases:
+    1. Attacker/unknown node that somehow obtains a certificate but
+       is assigned this enclave — it can join the domain but can
+       publish nothing, subscribe to nothing, and call no services.
+
+    2. Quarantine: temporarily assign a suspect node this enclave
+       via ROS_SECURITY_ENCLAVE_OVERRIDE without revoking its cert.
+
+    3. Default assignment for any new node added to the system that
+       hasn't been reviewed yet — safe-by-default.
+
+  HOW TO USE FOR QUARANTINE:
+    # Force any node into the deny-all enclave at launch:
+    export ROS_SECURITY_ENCLAVE_OVERRIDE=/autoware/untrusted
+    ros2 run <pkg> <node> --ros-args --enclave /autoware/untrusted
+
+  NOTE:
+    The empty <publish/> <subscribe/> <request/> <reply/> tags are
+    intentional. DDS will deny all DataWriter and DataReader creation
+    for any participant using this enclave.
+-->
+<policy version="0.2.0">
+  <enclaves>
+
+    <!-- ═══════════════════════════════════════════════════════
+         DENY-ALL 
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/untrusted">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish/>
+            <subscribe/>
+          </topics>
+          <services>
+            <request/>
+            <reply/>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+  </enclaves>
+</policy>
