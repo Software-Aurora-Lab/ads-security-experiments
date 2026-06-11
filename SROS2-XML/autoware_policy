@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  autoware_policy.xml
+  ====================
+  Permissions for all internal Autoware nodes.
+  Each subsystem gets exactly the topics and services it legitimately needs.
+  Anything not listed here is denied by DDS default-deny.
+
+  Enclaves defined here:
+    /autoware/map
+    /autoware/sensing
+    /autoware/localization
+    /autoware/perception
+    /autoware/planning
+    /autoware/control
+    /autoware/vehicle
+    /autoware/simulator
+    /autoware/system
+    /autoware/visualization
+
+  External callers (FMS, HMI) → see default_ad_api.xml
+  Unknown/attacker nodes      → see untrusted.xml
+-->
+<policy version="0.2.0">
+  <enclaves>
+
+    <!-- ═══════════════════════════════════════════════════════
+         MAP
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/map">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>map/pointcloud_map</topic>
+              <topic>map/vector_map</topic>
+              <topic>map/vector_map_marker</topic>
+              <topic>tf_static</topic>
+            </publish>
+            <subscribe>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>map/get_differential_pointcloud_map</service>
+              <service>map/*/get_parameters</service>
+              <service>map/*/set_parameters</service>
+              <service>map/*/list_parameters</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SENSING
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/sensing">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>sensing/lidar/*/pointcloud_raw</topic>
+              <topic>sensing/lidar/*/pointcloud_raw_ex</topic>
+              <topic>sensing/camera/*/image_raw</topic>
+              <topic>sensing/camera/*/camera_info</topic>
+              <topic>sensing/imu/imu_raw</topic>
+              <topic>sensing/gnss/*/nav_sat_fix</topic>
+              <topic>sensing/gnss/*/twist</topic>
+              <topic>sensing/radar/*/objects_raw</topic>
+            </publish>
+            <subscribe>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>sensing/*/get_parameters</service>
+              <service>sensing/*/set_parameters</service>
+              <service>sensing/*/list_parameters</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LOCALIZATION
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/localization">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>localization/kinematic_state</topic>
+              <topic>localization/pose_estimator/pose</topic>
+              <topic>localization/pose_estimator/pose_with_covariance</topic>
+              <topic>localization/pose_twist_fusion_filter/kinematic_state</topic>
+              <topic>localization/util/downsample/pointcloud</topic>
+              <topic>tf</topic>
+            </publish>
+            <subscribe>
+              <topic>sensing/lidar/*/pointcloud_raw</topic>
+              <topic>sensing/imu/imu_raw</topic>
+              <topic>sensing/gnss/*/nav_sat_fix</topic>
+              <topic>map/pointcloud_map</topic>
+              <topic>map/vector_map</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>localization/*/get_parameters</service>
+              <service>localization/*/set_parameters</service>
+              <service>localization/*/list_parameters</service>
+              <service>localization/*/initialize</service>
+            </reply>
+            <request>
+              <service>map/get_differential_pointcloud_map</service>
+            </request>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PERCEPTION
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/perception">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>perception/object_recognition/detection/objects</topic>
+              <topic>perception/object_recognition/tracking/objects</topic>
+              <topic>perception/object_recognition/prediction/objects</topic>
+              <topic>perception/traffic_light_recognition/traffic_signals</topic>
+              <topic>perception/occupancy_grid_map/map</topic>
+            </publish>
+            <subscribe>
+              <topic>sensing/lidar/*/pointcloud_raw</topic>
+              <topic>sensing/camera/*/image_raw</topic>
+              <topic>sensing/camera/*/camera_info</topic>
+              <topic>sensing/radar/*/objects_raw</topic>
+              <topic>localization/kinematic_state</topic>
+              <topic>map/vector_map</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>perception/*/get_parameters</service>
+              <service>perception/*/set_parameters</service>
+              <service>perception/*/list_parameters</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PLANNING
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/planning">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>planning/mission_planning/route</topic>
+              <topic>planning/scenario_planning/trajectory</topic>
+              <topic>planning/scenario_planning/max_velocity</topic>
+              <topic>planning/scenario_planning/lane_driving/trajectory</topic>
+            </publish>
+            <subscribe>
+              <topic>localization/kinematic_state</topic>
+              <topic>perception/object_recognition/prediction/objects</topic>
+              <topic>perception/traffic_light_recognition/traffic_signals</topic>
+              <topic>perception/occupancy_grid_map/map</topic>
+              <topic>map/vector_map</topic>
+              <topic>map/pointcloud_map</topic>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>system/operation_mode/state</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>planning/*/get_parameters</service>
+              <service>planning/*/set_parameters</service>
+              <service>planning/*/list_parameters</service>
+              <service>planning/mission_planning/set_route</service>
+              <service>planning/mission_planning/set_route_points</service>
+              <service>planning/mission_planning/clear_route</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CONTROL
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/control">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>control/command/control_cmd</topic>
+              <topic>control/command/turn_indicators_cmd</topic>
+              <topic>control/command/hazard_lights_cmd</topic>
+              <topic>control/command/gear_cmd</topic>
+              <topic>control/trajectory_follower/control_cmd</topic>
+              <topic>system/operation_mode/state</topic>
+            </publish>
+            <subscribe>
+              <topic>planning/scenario_planning/trajectory</topic>
+              <topic>localization/kinematic_state</topic>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>vehicle/status/control_mode</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>control/*/get_parameters</service>
+              <service>control/*/set_parameters</service>
+              <service>control/*/list_parameters</service>
+              <service>system/operation_mode/change_operation_mode</service>
+              <service>vehicle/*/control_mode_request</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VEHICLE INTERFACE
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/vehicle">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>vehicle/status/gear_status</topic>
+              <topic>vehicle/status/turn_indicators_status</topic>
+              <topic>vehicle/status/hazard_lights_status</topic>
+              <topic>vehicle/status/control_mode</topic>
+              <topic>vehicle/status/door_status</topic>
+            </publish>
+            <subscribe>
+              <topic>control/command/control_cmd</topic>
+              <topic>control/command/turn_indicators_cmd</topic>
+              <topic>control/command/hazard_lights_cmd</topic>
+              <topic>control/command/gear_cmd</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>vehicle/*/get_parameters</service>
+              <service>vehicle/*/set_parameters</service>
+              <service>vehicle/*/list_parameters</service>
+              <service>vehicle/*/control_mode_request</service>
+              <service>vehicle/*/door_command</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SIMULATOR  (planning_simulator only)
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/simulator">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>vehicle/status/control_mode</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </publish>
+            <subscribe>
+              <topic>control/command/control_cmd</topic>
+              <topic>control/command/gear_cmd</topic>
+              <topic>initialpose</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>simulator/*/get_parameters</service>
+              <service>simulator/*/set_parameters</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SYSTEM / DIAGNOSTICS
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/system">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>diagnostics</topic>
+              <topic>diagnostics_agg</topic>
+              <topic>system/emergency/hazard_status</topic>
+              <topic>system/fail_safe/mrm_state</topic>
+              <topic>system/mrm/comfortable_stop/status</topic>
+              <topic>system/mrm/emergency_stop/status</topic>
+              <topic>rosout</topic>
+            </publish>
+            <subscribe>
+              <topic>diagnostics</topic>
+              <topic>localization/kinematic_state</topic>
+              <topic>planning/scenario_planning/trajectory</topic>
+              <topic>control/command/control_cmd</topic>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/control_mode</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+          <services>
+            <reply>
+              <service>system/*/get_parameters</service>
+              <service>system/*/list_parameters</service>
+            </reply>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ═══════════════════════════════════════════════════════
+         VISUALIZATION  (RViz2 — read-only except goal/pose)
+         ═══════════════════════════════════════════════════════ -->
+    <enclave path="/autoware/visualization">
+      <profiles>
+        <profile ns="/" node="*">
+          <topics>
+            <publish>
+              <topic>initialpose</topic>
+              <topic>planning/mission_planning/goal</topic>
+            </publish>
+            <subscribe>
+              <topic>sensing/lidar/*/pointcloud_raw</topic>
+              <topic>localization/kinematic_state</topic>
+              <topic>localization/pose_estimator/pose_with_covariance</topic>
+              <topic>perception/object_recognition/prediction/objects</topic>
+              <topic>perception/traffic_light_recognition/traffic_signals</topic>
+              <topic>planning/mission_planning/route</topic>
+              <topic>planning/scenario_planning/trajectory</topic>
+              <topic>control/command/control_cmd</topic>
+              <topic>vehicle/status/velocity_status</topic>
+              <topic>vehicle/status/steering_status</topic>
+              <topic>map/vector_map</topic>
+              <topic>map/vector_map_marker</topic>
+              <topic>map/pointcloud_map</topic>
+              <topic>system/fail_safe/mrm_state</topic>
+              <topic>diagnostics_agg</topic>
+              <topic>tf</topic>
+              <topic>tf_static</topic>
+            </subscribe>
+          </topics>
+        </profile>
+      </profiles>
+    </enclave>
+
+  </enclaves>
+</policy>
