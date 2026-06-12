@@ -1,0 +1,49 @@
+networks:
+  ros_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24
+
+services:
+  autoware:
+    image: ghcr.io/autowarefoundation/autoware:universe-humble
+    container_name: autoware_target
+    network_mode: host
+    stdin_open: true
+    privileged: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - HOST_UID=${HOST_UID:-1000}
+      - HOST_GID=${HOST_GID:-1000}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/autoware_map:/home/aw/autoware_map
+      - ${HOME}/autoware_data:/home/aw/autoware_data
+    command:
+      - bash
+      - -c
+      - | 
+        ros2 launch autoware_launch planning_simulator.launch.xml \
+          map_path:=/home/aw/autoware_map/sample-map-planning \
+          vehicle_model:=sample_vehicle \
+          sensor_model:=sample_sensor_kit 
+        exec bash
+     
+
+  attacker:
+    image: ghcr.io/autowarefoundation/autoware:universe-humble
+    container_name: attacker_node
+    network_mode: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    entrypoint: bash
+
