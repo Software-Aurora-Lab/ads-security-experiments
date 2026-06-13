@@ -20,4 +20,18 @@ $ ros2 service call /autoware/shutdown std_srvs/srv/Trigger
 ```
 
 ### Tested API Endpoints
+```
+- /autoware/shutdown [std_srvs/srv/Trigger]
+$ ros2 service call /autoware/shutdown std_srvs/srv/Trigger
+
+- /api/autoware/set/emergency [tier4_external_api_msgs/srv/SetEmergency]
+$ ros2 service call /api/autoware/set/emergency tier4_external_api_msgs/serv/SetEmergency "{emergency: true}"
+
+- /api/operation_mode/change_to_stop [autoware_adapi_v1_msgs/srv/ChangeOperationMode]
+$ ros2 service call /api/operation_mode/change_to_stop autoware_adapi_v1_msgs/srv/ChangeOperationMode "{}"
+```
+
+Note that using endpoints from Tier4/Autoware's AD API for the first time may result in the following error: `"The passed service type is invalid"`.
+
+If so, see the comments in and run `get_endpoint_message_bindings.sh`.
 
